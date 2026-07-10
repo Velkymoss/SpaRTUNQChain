@@ -159,5 +159,48 @@ def temporal_yn(
     temporal_yn.main(args)
 
 
+@app.command()
+def constraint_analysis(
+    # Training parameters
+    seed: int = typer.Option(42, help="Seed value used for experiment"),
+    model: str = typer.Option("bert", help="Model used"),
+    batch_size: int = typer.Option(8, help="Batch size for analysis"),
+    # Data parameters
+    data_path: str = typer.Option("data/", help="Path to the data folder"),
+    # Model parameters
+    dropout: bool = typer.Option(False, help="Enable dropout"),
+    constraints: bool = typer.Option(False, help="Enable constraints"),
+    # Training method parameters
+    pmd: bool = typer.Option(False, help="Use Primal Dual method"),
+    beta: float = typer.Option(1.0, help="Beta parameter for PMD"),
+    sampling: bool = typer.Option(False, help="Use sampling loss"),
+    sampling_size: int = typer.Option(4, help="Sampling size"),
+    # Additional options
+    cuda: int = typer.Option(0, help="CUDA device number (-1 for CPU)"),
+    output_file: str = typer.Option(
+        "final_chain_questions.json", help="Path to save the extracted chain questions as a JSON array"
+    ),
+):
+    import argparse
+
+    import tempQchain.constraint_analysis as constraint_analysis
+
+    args = argparse.Namespace(
+        seed=seed,
+        model=model,
+        batch_size=batch_size,
+        data_path=data_path,
+        dropout=dropout,
+        constraints=constraints,
+        pmd=pmd,
+        beta=beta,
+        sampling=sampling,
+        sampling_size=sampling_size,
+        cuda=cuda,
+        output_file=output_file,
+    )
+    constraint_analysis.main(args)
+
+
 if __name__ == "__main__":
     app()

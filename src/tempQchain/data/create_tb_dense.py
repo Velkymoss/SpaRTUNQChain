@@ -230,8 +230,23 @@ def process_tb_dense(
     logger.info(f"Train relation distribution:\n{train_df['relation'].value_counts(normalize=True)}")
     logger.info(f"Dev relation distribution:\n{dev_df['relation'].value_counts(normalize=True)}")
     logger.info(f"Test relation distribution:\n{test_df['relation'].value_counts(normalize=True)}")
+    # Additional logging for the new test_constraints mode (same data as test)
+    logger.info(f"Test Constraints data: {len(test_df)}")
+    logger.info(
+        f"Test Constraints relation distribution:\n"
+        f"{test_df['relation'].value_counts(normalize=True)}"
+    )
 
-    for mode, df in [("train", train_df), ("dev", dev_df), ("test", test_df)]:
+    # Process each dataset mode. The fourth mode "test_constraints" re‑uses the test split
+    # but enables chain/fact constraints (same as training when augment_train is True).
+    modes = [
+        ("train", train_df, augment_train),   # train – may augment based on flag
+        ("dev", dev_df, False),               # dev – no constraints
+        ("test", test_df, False),             # test – no constraints
+        ("test_constraints", test_df, True),  # new mode – constraints enabled
+    ]
+
+    for mode, df, apply_constraints in modes:
         logger.info(f"Processing {mode} data...")
         doc_pair_relations = []
         for doc_id in df.doc_id.unique():
@@ -279,7 +294,7 @@ def process_tb_dense(
             "vague": "vague",
         }
 
-        if mode == "train" and augment_train:
+        if apply_constraints:
             doc_chains = create_chain(doc_pair_relations, trans_pairs, inverse)
         else:
             doc_chains = None
@@ -301,7 +316,7 @@ def process_tb_dense(
                 yn_questions, yn_answers = create_yn(query, row["relation"], relation_set)
 
                 for i, yn_question in enumerate(yn_questions):
-                    if mode == "train" and augment_train:
+                    if apply_constraints:
                         question_info = {
                             "num_facts": doc_chains[doc_index][query]["num_facts"],
                             "reasoning_steps": doc_chains[doc_index][query]["reasoning_steps"],
@@ -345,7 +360,7 @@ def process_tb_dense(
 
                 # Add the FR question
                 question, answer = create_fr(row["relation"])
-                if mode == "train" and augment_train:
+                if apply_constraints:
                     question_info = {
                         "num_facts": doc_chains[doc_index][query]["num_facts"],
                         "reasoning_steps": doc_chains[doc_index][query]["reasoning_steps"],
@@ -392,7 +407,7 @@ def process_tb_dense(
         # Construct facts info
         logger.info("Constructing facts info...")
 
-        if mode == "train" and augment_train:
+        if apply_constraints:
             doc_facts_info = create_facts_info(doc_questions, inverse, trans_rules)
         else:
             doc_facts_info = {}

@@ -13,3 +13,4 @@ data/*
 !data/README.md
 models/
 mlruns/
+constraint_results/

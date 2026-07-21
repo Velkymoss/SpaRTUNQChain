@@ -202,5 +202,61 @@ def constraint_analysis(
     constraint_analysis.main(args)
 
 
+@app.command()
+def calculate_transitive_accuracy(
+    file_path: str = typer.Option(..., help="Path to the constraint results file"),
+):
+    """Calculate transitive accuracy from constraint results file."""
+    import tempQchain.transitive_accuracy as transitive_accuracy
+
+    typer.echo(f"Analyzing transitive accuracy for: {file_path}")
+
+    try:
+        results = transitive_accuracy.calculate_transitive_accuracy(file_path)
+
+        # Output results
+        typer.echo("\nTransitive Constraint Analysis:")
+        typer.echo(f"Total transitive batches: {results['total_transitive_batches']}")
+        typer.echo(f"Correct conclusions: {results['correct_conclusions']}")
+        typer.echo(f"Incorrect conclusions: {results['incorrect_conclusions']}")
+        typer.echo(f"Accuracy: {results['accuracy']:.2%}")
+
+        typer.echo("\nRule-by-Rule Statistics:")
+        for rule_key, stats in results["rule_stats"].items():
+            rule_accuracy = stats["correct"] / stats["total"] if stats["total"] > 0 else 0.0
+            typer.echo(f"  Rule {rule_key}: {stats['correct']}/{stats['total']} correct ({rule_accuracy:.2%})")
+
+        typer.echo("✅ Transitive accuracy calculation completed successfully!")
+    except Exception as e:
+        typer.echo(f"❌ Error during transitive accuracy calculation: {e}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
+def calculate_symmetry_accuracy(
+    file_path: str = typer.Option(..., help="Path to the constraint results file"),
+):
+    """Calculate symmetry accuracy from constraint results file."""
+    import tempQchain.symmetry_accuracy as symmetry_accuracy
+
+    typer.echo(f"Analyzing symmetry accuracy for: {file_path}")
+
+    try:
+        results = symmetry_accuracy.calculate_symmetry_accuracy(file_path)
+
+        # Output results
+        typer.echo("\nSymmetry Constraint Analysis:")
+        typer.echo(f"Total symmetry batches: {results['total_symmetry_batches']}")
+        typer.echo(f"Correct conclusions: {results['correct_conclusions']}")
+        typer.echo(f"Incorrect conclusions: {results['incorrect_conclusions']}")
+        typer.echo(f"Accuracy: {results['accuracy']:.2%}")
+
+
+        typer.echo("✅ Symmetry accuracy calculation completed successfully!")
+    except Exception as e:
+        typer.echo(f"❌ Error during symmetry accuracy calculation: {e}", err=True)
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()

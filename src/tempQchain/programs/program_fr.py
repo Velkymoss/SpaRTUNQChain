@@ -11,9 +11,6 @@ from domiknows.sensor.pytorch.sensors import FunctionalSensor, JointSensor, Read
 from tempQchain.graphs.graph_fr import (
     answer_class,
     graph,
-    inv_question1,
-    inv_question2,
-    inverse,
     question,
     story,
     story_contain,
@@ -30,7 +27,7 @@ from tempQchain.programs.models import (
     Bert,
     BERTTokenizer,
 )
-from tempQchain.programs.utils import check_inverse, check_symmetric, check_transitive, read_label, str_to_int_list
+from tempQchain.programs.utils import check_symmetric, check_transitive, read_label, str_to_int_list
 
 logger = get_logger(__name__)
 
@@ -105,9 +102,9 @@ def program_declaration_tb_dense_fr(
             device=device,
         )
 
-        inverse[inv_question1.reversed, inv_question2.reversed] = CompositionCandidateSensor(
-            relations=(inv_question1.reversed, inv_question2.reversed), forward=check_inverse, device=device
-        )
+        # inverse[inv_question1.reversed, inv_question2.reversed] = CompositionCandidateSensor(
+        #     relations=(inv_question1.reversed, inv_question2.reversed), forward=check_inverse, device=device
+        # )
 
         transitive[tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed] = CompositionCandidateSensor(
             relations=(tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed),
@@ -115,7 +112,7 @@ def program_declaration_tb_dense_fr(
             device=device,
         )
 
-        poi_list.extend([inverse, transitive])
+        poi_list.extend([symmetric, transitive])
 
     infer_list = ["ILP", "local/argmax"]
     if pmd:

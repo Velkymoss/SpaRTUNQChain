@@ -379,55 +379,55 @@ def create_facts_info(doc_questions, inverse_rules, transitive_rules):
             elif len(question["question_info"]["chain"]) == 1:
                 level = 1
 
-                if question["question_info"]["target_relation"][0] in ["simultaneous", "vague"]:
-                    previous = [
-                        [
-                            question["question_info"]["chain"][0][0][0],
-                            question["question_info"]["chain"][0][0][1],
-                            question["question_info"]["chain"][0][1]["relation_type"],
-                        ]
+                # if question["question_info"]["target_relation"][0] in ["simultaneous", "vague"]:
+                previous = [
+                    [
+                        question["question_info"]["chain"][0][0][0],
+                        question["question_info"]["chain"][0][0][1],
+                        question["question_info"]["chain"][0][1]["relation_type"],
                     ]
-                    path = (
-                        previous[0][0]
-                        + " "
-                        + previous[0][2]
-                        + " "
-                        + previous[0][1]
-                        + " @@symmetric,"
-                        + previous[0][2]
-                        + " -> "
-                        + previous[0][1]
-                        + " "
-                        + inverse_rules[previous[0][2]]
-                        + " "
-                        + previous[0][0]
-                    )
-                    rule = "symmetric," + previous[0][2]
+                ]
+                path = (
+                    previous[0][0]
+                    + " "
+                    + previous[0][2]
+                    + " "
+                    + previous[0][1]
+                    + " @@symmetric,"
+                    + previous[0][2]
+                    + " -> "
+                    + previous[0][1]
+                    + " "
+                    + inverse_rules[previous[0][2]]
+                    + " "
+                    + previous[0][0]
+                )
+                rule = "symmetric," + previous[0][2]
 
-                else:
-                    previous = [
-                        [
-                            question["question_info"]["chain"][0][0][0],
-                            question["question_info"]["chain"][0][0][1],
-                            question["question_info"]["chain"][0][1]["relation_type"],
-                        ]
-                    ]
-                    path = (
-                        previous[0][0]
-                        + " "
-                        + previous[0][2]
-                        + " "
-                        + previous[0][1]
-                        + " @@inverse,"
-                        + previous[0][2]
-                        + " -> "
-                        + previous[0][1]
-                        + " "
-                        + inverse_rules[previous[0][2]]
-                        + " "
-                        + previous[0][0]
-                    )
-                    rule = "inverse," + previous[0][2]
+                # else:
+                #     previous = [
+                #         [
+                #             question["question_info"]["chain"][0][0][0],
+                #             question["question_info"]["chain"][0][0][1],
+                #             question["question_info"]["chain"][0][1]["relation_type"],
+                #         ]
+                #     ]
+                #     path = (
+                #         previous[0][0]
+                #         + " "
+                #         + previous[0][2]
+                #         + " "
+                #         + previous[0][1]
+                #         + " @@inverse,"
+                #         + previous[0][2]
+                #         + " -> "
+                #         + previous[0][1]
+                #         + " "
+                #         + inverse_rules[previous[0][2]]
+                #         + " "
+                #         + previous[0][0]
+                #     )
+                #     rule = "inverse," + previous[0][2]
 
             # One reasoning step using transitivity
             elif question["question_info"]["reasoning_steps"] == 1 and len(question["question_info"]["chain"]) == 2:

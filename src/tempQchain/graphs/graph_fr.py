@@ -26,7 +26,13 @@ with Graph("temporal_QA_rule") as graph:
     symmetric_question1, symmetric_question2 = symmetric.has_a(arg1=question, arg2=question)
 
     # symmetric - if q1 has label, q2 has same label
-    symmetric_list = [(answer_class.simultaneous, answer_class.simultaneous), (answer_class.vague, answer_class.vague)]
+    symmetric_list = [
+        (answer_class.simultaneous, answer_class.simultaneous),
+        (answer_class.before, answer_class.after),
+        (answer_class.after, answer_class.before),
+        (answer_class.includes, answer_class.is_included),
+        (answer_class.is_included, answer_class.includes),
+    ]
     for ans1, ans2 in symmetric_list:
         ifL(
             andL(symmetric("s"), ans1(path=("s", symmetric_question1))),
@@ -34,21 +40,21 @@ with Graph("temporal_QA_rule") as graph:
         )
 
     # inverse Constrains
-    inverse = Concept(name="inverse")
-    inv_question1, inv_question2 = inverse.has_a(arg1=question, arg2=question)
+    # inverse = Concept(name="inverse")
+    # inv_question1, inv_question2 = inverse.has_a(arg1=question, arg2=question)
 
-    # inverse - if q1 has label, q2 has inverse label
-    inverse_list = [
-        (answer_class.before, answer_class.after),
-        (answer_class.after, answer_class.before),
-        (answer_class.includes, answer_class.is_included),
-        (answer_class.is_included, answer_class.includes),
-    ]
-    for ans1, ans2 in inverse_list:
-        ifL(
-            andL(inverse("s"), ans1(path=("s", inv_question1))),
-            ans2(path=("s", inv_question2)),
-        )
+    # # inverse - if q1 has label, q2 has inverse label
+    # inverse_list = [
+    #     (answer_class.before, answer_class.after),
+    #     (answer_class.after, answer_class.before),
+    #     (answer_class.includes, answer_class.is_included),
+    #     (answer_class.is_included, answer_class.includes),
+    # ]
+    # for ans1, ans2 in inverse_list:
+    #     ifL(
+    #         andL(inverse("s"), ans1(path=("s", inv_question1))),
+    #         ans2(path=("s", inv_question2)),
+    #     )
 
     ########################################################################################
     ############################ Transitive ##################################################

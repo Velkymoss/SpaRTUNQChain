@@ -372,7 +372,7 @@ def create_facts_info(doc_questions, inverse_rules, transitive_rules):
                 level = 0
                 previous = []
                 path = ""
-                rule = "vague"
+                rule = ""
 
             # One reasoning step using the inverse rules
             elif len(question["question_info"]["chain"]) == 1:

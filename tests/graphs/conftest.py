@@ -35,6 +35,26 @@ def check_symmetric(**kwargs) -> bool:
     return False
 
 
+def check_inverse(**kwargs) -> bool:
+    """Check if arg2 is the inverse of arg1."""
+    args = list(kwargs.values())
+    if len(args) != 2:
+        return False
+    arg1, arg2 = args[0], args[1]
+
+    if arg1 == arg2:
+        return False
+    relation_arg2 = arg2.getAttribute("relation")
+    if relation_arg2 == "":
+        return False
+    relation_describe = relation_arg2.split(",")
+    if relation_describe[0] == "inverse":
+        qid1 = arg1.getAttribute("id").item()
+        if qid1 == int(relation_describe[1]):
+            return True
+    return False
+
+
 def check_transitive(**kwargs) -> bool:
     args = list(kwargs.values())
     if len(args) != 3:
@@ -63,7 +83,9 @@ def assert_local_softmax(q_node, label, expected_tensor, device=None):
     if device is not None:
         result = result.to(device)
         expected_tensor = expected_tensor.to(device)
-    assert torch.allclose(result, expected_tensor, atol=1e-4), f"Label {label}: Expected {expected_tensor}, got {result}"
+    assert torch.allclose(result, expected_tensor, atol=1e-4), (
+        f"Label {label}: Expected {expected_tensor}, got {result}"
+    )
 
 
 def assert_ilp_result(q_node, label, expected_tensor, device=None):

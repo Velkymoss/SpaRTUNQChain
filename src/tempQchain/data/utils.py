@@ -25,11 +25,11 @@ def read_txt(path_to_file):
     return tlinks
 
 
-def check_trans_for_pairs(pairs):
+def check_trans_for_pairs(pairs: list[tuple[str, str]]) -> tuple[int, list[list[tuple[str, str]]]]:
     """
 
     :param pairs: A list of pairs
-    :return: The count of transitive pairs found and a list with the triples of transitive pairs
+    :return: The count of transitive pairs found and a list with the triples of transitive pairs found
     """
     trans_count = 0
     trans_pairs = []
@@ -45,7 +45,12 @@ def check_trans_for_pairs(pairs):
     return trans_count, trans_pairs
 
 
-def create_story_triplets(doc_pair_relations):
+def create_story_triplets(
+    doc_pair_relations: list[dict[tuple[str, str], str]],
+) -> list[dict[str, list[dict[str, str]]]]:
+    """
+    example story triplet: {"(e1, e2)": [{"relation_type": "before", "relation_property": ""}]}
+    """
     doc_story_triplets = []
     for doc in doc_pair_relations:
         story_triplets = {}
@@ -115,61 +120,80 @@ def create_fr(relation: str) -> tuple[str, list[str]]:
     return question, answer
 
 
-def create_chain(doc_pair_relations, trans_triples, inverse):
+def create_chain(
+    doc_pair_relations: list[dict[tuple[str, str], str]],
+    trans_triples: list[list[tuple[str, str]]],
+    inverse: dict[str, str],
+    transitive_rules: dict[tuple[str, str], list[str]],
+):
     doc_chains = []
     for i in range(len(doc_pair_relations)):
         pairs_chains = {}
         for pair in doc_pair_relations[i]:
-            # print("Pair:", pair)
+            # Inside create_chain, after skipping vague pairs:
+            if doc_pair_relations[i][pair] == "vague":
+                pairs_chains[pair] = {"num_facts": 0, "reasoning_steps": 0, "chain": [], "goal_chain": []}
+                continue
             # Check for existing tranitivity chain for pair (x,y)
             existing_transitivity = False
             for triple in trans_triples[i]:
                 if pair == triple[2]:
                     # print("found")
                     # print(triple)
-                    chain = {
-                        "num_facts": 2,
-                        "reasoning_steps": 1,
-                        "chain": [
-                            [triple[0], {"relation_type": doc_pair_relations[i][triple[0]], "relation_property": ""}],
-                            [triple[1], {"relation_type": doc_pair_relations[i][triple[1]], "relation_property": ""}],
-                        ],
-                        "goal_chain": [
-                            [
-                                triple[0][0],
-                                triple[0][1],
-                                {"relation_type": doc_pair_relations[i][triple[0]], "relation_property": ""},
+                    rule_key = (doc_pair_relations[i][triple[0]], doc_pair_relations[i][triple[1]])
+
+                    if (
+                        rule_key in transitive_rules
+                        and transitive_rules[rule_key][0] == doc_pair_relations[i][triple[2]]
+                    ):
+                        chain = {
+                            "num_facts": 2,
+                            "reasoning_steps": 1,
+                            "chain": [
+                                [
+                                    triple[0],
+                                    {"relation_type": doc_pair_relations[i][triple[0]], "relation_property": ""},
+                                ],
+                                [
+                                    triple[1],
+                                    {"relation_type": doc_pair_relations[i][triple[1]], "relation_property": ""},
+                                ],
                             ],
-                            [
-                                triple[1][0],
-                                triple[1][1],
-                                {"relation_type": doc_pair_relations[i][triple[1]], "relation_property": ""},
+                            "goal_chain": [
+                                [
+                                    triple[0][0],
+                                    triple[0][1],
+                                    {"relation_type": doc_pair_relations[i][triple[0]], "relation_property": ""},
+                                ],
+                                [
+                                    triple[1][0],
+                                    triple[1][1],
+                                    {"relation_type": doc_pair_relations[i][triple[1]], "relation_property": ""},
+                                ],
                             ],
-                        ],
-                    }
-                    # print([triple[0], triple[1]])
-                    existing_transitivity = True
+                        }
+                        # print([triple[0], triple[1]])
+                        existing_transitivity = True
 
                 # Check for existing transitivity for (y,x)
-                if (pair[1], pair[0]) == triple[2]:
-                    # print("Pair:", pair, "triple:", triple)
-                    chain = {
-                        "num_facts": 2,
-                        "reasoning_steps": 2,
-                        "chain": [
-                            [triple[0], {"relation_type": doc_pair_relations[i][triple[0]], "relation_property": ""}],
-                            [triple[1], {"relation_type": doc_pair_relations[i][triple[1]], "relation_property": ""}],
-                        ],
-                        "goal_chain": [
-                            [
-                                triple[2][0],
-                                triple[2][1],
-                                {"relation_type": inverse[doc_pair_relations[i][triple[2]]], "relation_property": ""},
-                            ]
-                        ],
-                    }
-                    existing_transitivity = True
-
+                # if (pair[1], pair[0]) == triple[2]:
+                #     # print("Pair:", pair, "triple:", triple)
+                #     chain = {
+                #         "num_facts": 2,
+                #         "reasoning_steps": 2,
+                #         "chain": [
+                #             [triple[0], {"relation_type": doc_pair_relations[i][triple[0]], "relation_property": ""}],
+                #             [triple[1], {"relation_type": doc_pair_relations[i][triple[1]], "relation_property": ""}],
+                #         ],
+                #         "goal_chain": [
+                #             [
+                #                 triple[2][0],
+                #                 triple[2][1],
+                #                 {"relation_type": inverse[doc_pair_relations[i][triple[2]]], "relation_property": ""},
+                #             ]
+                #         ],
+                #     }
+                #     existing_transitivity = True
                 if existing_transitivity:
                     break
             #     if pair not in list(reasoning_chain.keys()):
@@ -193,14 +217,102 @@ def create_chain(doc_pair_relations, trans_triples, inverse):
                         # And the second event in the pair is connected with x
                         if p2[0] == pair[1] and p2[1] in list(candidate_symmetry.keys()):
                             if candidate_symmetry[p2[1]][0] == pair[0]:
+                                rule_key = (
+                                    doc_pair_relations[i][candidate_symmetry[p2[1]]],
+                                    inverse[doc_pair_relations[i][p2]],
+                                )
+                                if (
+                                    rule_key in transitive_rules
+                                    and transitive_rules[rule_key][0] == doc_pair_relations[i][pair]
+                                ):
+                                    chain = {
+                                        "num_facts": 2,
+                                        "reasoning_steps": 2,
+                                        "chain": [
+                                            [
+                                                candidate_symmetry[p2[1]],
+                                                {
+                                                    "relation_type": doc_pair_relations[i][candidate_symmetry[p2[1]]],
+                                                    "relation_property": "",
+                                                },
+                                            ],
+                                            [p2, {"relation_type": doc_pair_relations[i][p2], "relation_property": ""}],
+                                        ],
+                                        "goal_chain": [
+                                            [
+                                                p2[1],
+                                                p2[0],
+                                                {
+                                                    "relation_type": inverse[doc_pair_relations[i][p2]],
+                                                    "relation_property": "",
+                                                },
+                                            ]
+                                        ],
+                                    }
+                                    existing_transitivity = True
+
+                            else:
+                                # never triggers
+                                rule_key = (
+                                    inverse[doc_pair_relations[i][candidate_symmetry[p2[1]]]],
+                                    inverse[doc_pair_relations[i][p2]],
+                                )
+                                if (
+                                    rule_key in transitive_rules
+                                    and transitive_rules[rule_key][0] == doc_pair_relations[i][pair]
+                                ):
+                                    chain = {
+                                        "num_facts": 2,
+                                        "reasoning_steps": 3,
+                                        "chain": [
+                                            [
+                                                candidate_symmetry[p2[1]],
+                                                {
+                                                    "relation_type": doc_pair_relations[i][candidate_symmetry[p2[1]]],
+                                                    "relation_property": "",
+                                                },
+                                            ],
+                                            [p2, {"relation_type": doc_pair_relations[i][p2], "relation_property": ""}],
+                                        ],
+                                        "goal_chain": [
+                                            [
+                                                candidate_symmetry[p2[1]][1],
+                                                candidate_symmetry[p2[1]][0],
+                                                {
+                                                    "relation_type": inverse[
+                                                        doc_pair_relations[i][candidate_symmetry[p2[1]]]
+                                                    ],
+                                                    "relation_property": "",
+                                                },
+                                            ],
+                                            [
+                                                p2[1],
+                                                p2[0],
+                                                {
+                                                    "relation_type": inverse[doc_pair_relations[i][p2]],
+                                                    "relation_property": "",
+                                                },
+                                            ],
+                                        ],
+                                    }
+                                    existing_transitivity = True
+                        elif p2[1] == pair[1] and p2[0] in list(candidate_symmetry.keys()):
+                            rule_key = (
+                                inverse[doc_pair_relations[i][candidate_symmetry[p2[0]]]],
+                                doc_pair_relations[i][p2],
+                            )
+                            if (
+                                rule_key in transitive_rules
+                                and transitive_rules[rule_key][0] == doc_pair_relations[i][pair]
+                            ):
                                 chain = {
                                     "num_facts": 2,
                                     "reasoning_steps": 2,
                                     "chain": [
                                         [
-                                            candidate_symmetry[p2[1]],
+                                            candidate_symmetry[p2[0]],
                                             {
-                                                "relation_type": doc_pair_relations[i][candidate_symmetry[p2[1]]],
+                                                "relation_type": doc_pair_relations[i][candidate_symmetry[p2[0]]],
                                                 "relation_property": "",
                                             },
                                         ],
@@ -208,77 +320,19 @@ def create_chain(doc_pair_relations, trans_triples, inverse):
                                     ],
                                     "goal_chain": [
                                         [
-                                            p2[1],
-                                            p2[0],
+                                            candidate_symmetry[p2[0]][1],
+                                            candidate_symmetry[p2[0]][0],
                                             {
-                                                "relation_type": inverse[doc_pair_relations[i][p2]],
+                                                "relation_type": inverse[
+                                                    doc_pair_relations[i][candidate_symmetry[p2[0]]]
+                                                ],
                                                 "relation_property": "",
                                             },
                                         ]
                                     ],
                                 }
-                            else:
-                                chain = {
-                                    "num_facts": 2,
-                                    "reasoning_steps": 3,
-                                    "chain": [
-                                        [
-                                            candidate_symmetry[p2[1]],
-                                            {
-                                                "relation_type": doc_pair_relations[i][candidate_symmetry[p2[1]]],
-                                                "relation_property": "",
-                                            },
-                                        ],
-                                        [p2, {"relation_type": doc_pair_relations[i][p2], "relation_property": ""}],
-                                    ],
-                                    "goal_chain": [
-                                        [
-                                            candidate_symmetry[p2[1]][1],
-                                            candidate_symmetry[p2[1]][0],
-                                            {
-                                                "relation_type": inverse[
-                                                    doc_pair_relations[i][candidate_symmetry[p2[1]]]
-                                                ],
-                                                "relation_property": "",
-                                            },
-                                        ],
-                                        [
-                                            p[2][1],
-                                            p[2][0],
-                                            {
-                                                "relation_type": inverse[doc_pair_relations[i][p2]],
-                                                "relation_property": "",
-                                            },
-                                        ],
-                                    ],
-                                }
                                 existing_transitivity = True
-                        elif p2[1] == pair[1] and p2[0] in list(candidate_symmetry.keys()):
-                            chain = {
-                                "num_facts": 2,
-                                "reasoning_steps": 2,
-                                "chain": [
-                                    [
-                                        candidate_symmetry[p2[0]],
-                                        {
-                                            "relation_type": doc_pair_relations[i][candidate_symmetry[p2[0]]],
-                                            "relation_property": "",
-                                        },
-                                    ],
-                                    [p2, {"relation_type": doc_pair_relations[i][p2], "relation_property": ""}],
-                                ],
-                                "goal_chain": [
-                                    [
-                                        candidate_symmetry[p2[0]][1],
-                                        candidate_symmetry[p2[0]][0],
-                                        {
-                                            "relation_type": inverse[doc_pair_relations[i][candidate_symmetry[p2[0]]]],
-                                            "relation_property": "",
-                                        },
-                                    ]
-                                ],
-                            }
-                            existing_transitivity = True
+
                     if existing_transitivity:
                         break
 
@@ -299,6 +353,7 @@ def create_chain(doc_pair_relations, trans_triples, inverse):
                 }
 
             pairs_chains[pair] = chain
+
         doc_chains.append(pairs_chains)
     return doc_chains
     #     doc_pairs.append(len(doc_pair_relations[i]))
@@ -311,32 +366,68 @@ def create_facts_info(doc_questions, inverse_rules, transitive_rules):
         facts_info = {}
         for question in doc_q:
             key = question["query"][0] + ":" + question["query"][1]
+
+            # Handle empty chain case (for vague pairs)
+            if len(question["question_info"]["chain"]) == 0:
+                level = 0
+                previous = []
+                path = ""
+                rule = "vague"
+
             # One reasoning step using the inverse rules
-            if len(question["question_info"]["chain"]) == 1:
+            elif len(question["question_info"]["chain"]) == 1:
                 level = 1
-                previous = [
-                    [
-                        question["question_info"]["chain"][0][0][0],
-                        question["question_info"]["chain"][0][0][1],
-                        question["question_info"]["chain"][0][1]["relation_type"],
+
+                if question["question_info"]["target_relation"][0] in ["simultaneous", "vague"]:
+                    previous = [
+                        [
+                            question["question_info"]["chain"][0][0][0],
+                            question["question_info"]["chain"][0][0][1],
+                            question["question_info"]["chain"][0][1]["relation_type"],
+                        ]
                     ]
-                ]
-                path = (
-                    previous[0][0]
-                    + " "
-                    + previous[0][2]
-                    + " "
-                    + previous[0][1]
-                    + " @@symmetric,"
-                    + previous[0][2]
-                    + " -> "
-                    + previous[0][1]
-                    + " "
-                    + inverse_rules[previous[0][2]]
-                    + " "
-                    + previous[0][0]
-                )
-                rule = "symmetric," + previous[0][2]
+                    path = (
+                        previous[0][0]
+                        + " "
+                        + previous[0][2]
+                        + " "
+                        + previous[0][1]
+                        + " @@symmetric,"
+                        + previous[0][2]
+                        + " -> "
+                        + previous[0][1]
+                        + " "
+                        + inverse_rules[previous[0][2]]
+                        + " "
+                        + previous[0][0]
+                    )
+                    rule = "symmetric," + previous[0][2]
+
+                else:
+                    previous = [
+                        [
+                            question["question_info"]["chain"][0][0][0],
+                            question["question_info"]["chain"][0][0][1],
+                            question["question_info"]["chain"][0][1]["relation_type"],
+                        ]
+                    ]
+                    path = (
+                        previous[0][0]
+                        + " "
+                        + previous[0][2]
+                        + " "
+                        + previous[0][1]
+                        + " @@inverse,"
+                        + previous[0][2]
+                        + " -> "
+                        + previous[0][1]
+                        + " "
+                        + inverse_rules[previous[0][2]]
+                        + " "
+                        + previous[0][0]
+                    )
+                    rule = "inverse," + previous[0][2]
+
             # One reasoning step using transitivity
             elif question["question_info"]["reasoning_steps"] == 1 and len(question["question_info"]["chain"]) == 2:
                 level = 1
@@ -411,7 +502,7 @@ def create_facts_info(doc_questions, inverse_rules, transitive_rules):
                     + question["question_info"]["chain"][0][1]["relation_type"]
                     + " "
                     + question["question_info"]["chain"][0][0][1]
-                    + " @@symmetric,"
+                    + " @@symmetric/inverse,"
                     + question["question_info"]["chain"][0][1]["relation_type"]
                     + " -> "
                     + previous[0][0]
@@ -425,7 +516,7 @@ def create_facts_info(doc_questions, inverse_rules, transitive_rules):
                     + question["question_info"]["chain"][1][1]["relation_type"]
                     + " "
                     + question["question_info"]["chain"][1][0][1]
-                    + " @@symmetric,"
+                    + " @@symmetric/inverse,"
                     + question["question_info"]["chain"][1][1]["relation_type"]
                     + " -> "
                     + previous[1][0]
@@ -476,7 +567,7 @@ def create_facts_info(doc_questions, inverse_rules, transitive_rules):
                         + question["question_info"]["chain"][0][1]["relation_type"]
                         + " "
                         + question["question_info"]["chain"][0][0][1]
-                        + " @@symmetric,"
+                        + " @@symmetric/inverse,"
                         + question["question_info"]["chain"][0][1]["relation_type"]
                         + " -> "
                         + previous[0][0]
@@ -528,7 +619,7 @@ def create_facts_info(doc_questions, inverse_rules, transitive_rules):
                         + question["question_info"]["chain"][1][1]["relation_type"]
                         + " "
                         + question["question_info"]["chain"][1][0][1]
-                        + " @@symmetric,"
+                        + " @@symmetric/inverse,"
                         + question["question_info"]["chain"][1][1]["relation_type"]
                         + " -> "
                         + previous[1][0]

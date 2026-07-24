@@ -32,14 +32,14 @@ def check_symmetric(arg1: DataNode, arg2: DataNode) -> bool:
     return False
 
 
-def check_reverse(arg10: DataNode, arg20: DataNode) -> bool:
+def check_inverse(arg10: DataNode, arg20: DataNode) -> bool:
     if arg10 == arg20:
         return False
     relation_arg2 = arg20.getAttribute("relation")
     if relation_arg2 == "":
         return False
     relation_describe = relation_arg2.split(",")
-    if relation_describe[0] == "reverse":
+    if relation_describe[0] == "inverse":
         qid1 = arg10.getAttribute("id").item()
         if qid1 == int(relation_describe[1]):
             return True

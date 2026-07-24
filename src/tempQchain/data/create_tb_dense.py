@@ -159,7 +159,7 @@ def stratified_group_split_best_seed(df, test_frac=0.15, val_frac=0.15, seeds=li
         train_dist = train_df["relation"].value_counts(normalize=True).reindex(labels, fill_value=0).to_numpy()
         val_dist = val_df["relation"].value_counts(normalize=True).reindex(labels, fill_value=0).to_numpy()
         test_dist = test_df["relation"].value_counts(normalize=True).reindex(labels, fill_value=0).to_numpy()
-       
+
         max_diff = max(
             np.max(np.absolute(train_dist - val_dist)),
             np.max(np.absolute(train_dist - test_dist)),
@@ -232,23 +232,20 @@ def process_tb_dense(
     logger.info(f"Test relation distribution:\n{test_df['relation'].value_counts(normalize=True)}")
     # Additional logging for the new test_constraints mode (same data as test)
     logger.info(f"Test Constraints data: {len(test_df)}")
-    logger.info(
-        f"Test Constraints relation distribution:\n"
-        f"{test_df['relation'].value_counts(normalize=True)}"
-    )
+    logger.info(f"Test Constraints relation distribution:\n{test_df['relation'].value_counts(normalize=True)}")
 
     # Process each dataset mode. The fourth mode "test_constraints" re‑uses the test split
     # but enables chain/fact constraints (same as training when augment_train is True).
     modes = [
-        ("train", train_df, augment_train),   # train – may augment based on flag
-        ("dev", dev_df, False),               # dev – no constraints
-        ("test", test_df, False),             # test – no constraints
+        ("train", train_df, augment_train),  # train – may augment based on flag
+        ("dev", dev_df, False),  # dev – no constraints
+        ("test", test_df, False),  # test – no constraints
         ("test_constraints", test_df, True),  # new mode – constraints enabled
     ]
 
     for mode, df, apply_constraints in modes:
         logger.info(f"Processing {mode} data...")
-        doc_pair_relations = []
+        doc_pair_relations: list[dict[tuple[str, str], str]] = []
         for doc_id in df.doc_id.unique():
             doc_tlinks = df.loc[df["doc_id"] == doc_id]
             doc_pairs = list(zip(doc_tlinks.event1_id.to_list(), doc_tlinks.event2_id.to_list()))
@@ -295,7 +292,7 @@ def process_tb_dense(
         }
 
         if apply_constraints:
-            doc_chains = create_chain(doc_pair_relations, trans_pairs, inverse)
+            doc_chains = create_chain(doc_pair_relations, trans_pairs, inverse, trans_rules)
         else:
             doc_chains = None
 

@@ -17,6 +17,9 @@ from tempQchain.graphs.graph_fr import (
     question,
     story,
     story_contain,
+    symmetric,
+    symmetric_question1,
+    symmetric_question2,
     tran_quest1,
     tran_quest2,
     tran_quest3,
@@ -27,7 +30,7 @@ from tempQchain.programs.models import (
     Bert,
     BERTTokenizer,
 )
-from tempQchain.programs.utils import check_symmetric, check_transitive, read_label, str_to_int_list
+from tempQchain.programs.utils import check_inverse, check_symmetric, check_transitive, read_label, str_to_int_list
 
 logger = get_logger(__name__)
 
@@ -96,8 +99,14 @@ def program_declaration_tb_dense_fr(
     ]
 
     if constraints:
+        symmetric[symmetric_question1.reversed, symmetric_question2.reversed] = CompositionCandidateSensor(
+            relations=(symmetric_question1.reversed, symmetric_question2.reversed),
+            forward=check_symmetric,
+            device=device,
+        )
+
         inverse[inv_question1.reversed, inv_question2.reversed] = CompositionCandidateSensor(
-            relations=(inv_question1.reversed, inv_question2.reversed), forward=check_symmetric, device=device
+            relations=(inv_question1.reversed, inv_question2.reversed), forward=check_inverse, device=device
         )
 
         transitive[tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed] = CompositionCandidateSensor(

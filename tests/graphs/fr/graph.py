@@ -4,6 +4,7 @@ from domiknows.graph.logicalConstrain import andL, ifL, orL
 
 def get_graph(
     symmetric: bool = False,
+    inverse_relation: bool = False,
     transitive_determin: bool = False,
     transitive_non_determin: bool = False,
 ):
@@ -40,6 +41,23 @@ def get_graph(
                 (answer_class.vague, answer_class.vague),
             ]
             for ans1, ans2 in inverse_list2:
+                ifL(
+                    andL(inverse("s"), ans1(path=("s", inv_quest1))),
+                    ans2(path=("s", inv_quest2)),
+                )
+
+        if inverse_relation:
+            inverse = Concept(name="inverse")
+            inv_quest1, inv_quest2 = inverse.has_a(arg1=question, arg2=question)
+
+            # inverse - if q1 has label, q2 has inverse label
+            inverse_list = [
+                (answer_class.before, answer_class.after),
+                (answer_class.after, answer_class.before),
+                (answer_class.includes, answer_class.is_included),
+                (answer_class.is_included, answer_class.includes),
+            ]
+            for ans1, ans2 in inverse_list:
                 ifL(
                     andL(inverse("s"), ans1(path=("s", inv_quest1))),
                     ans2(path=("s", inv_quest2)),

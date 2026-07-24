@@ -369,10 +369,11 @@ def create_facts_info(doc_questions, inverse_rules, transitive_rules):
 
             # Handle empty chain case (for vague pairs)
             if len(question["question_info"]["chain"]) == 0:
-                level = 0
-                previous = []
-                path = ""
-                rule = ""
+                continue
+                # level = 0
+                # previous = []
+                # path = ""
+                # rule = ""
 
             # One reasoning step using the inverse rules
             elif len(question["question_info"]["chain"]) == 1:

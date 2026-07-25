@@ -42,6 +42,8 @@ def program_declaration_tb_dense_fr(
     dropout: bool = False,
     constraints: bool = False,
     class_weights: torch.FloatTensor = None,
+    transitive_enabled: bool = True,
+    inverse_enabled: bool = True,
 ) -> LearningBasedProgram:
     program = None
 
@@ -96,23 +98,40 @@ def program_declaration_tb_dense_fr(
     ]
 
     if constraints:
-        symmetric[symmetric_question1.reversed, symmetric_question2.reversed] = CompositionCandidateSensor(
-            relations=(symmetric_question1.reversed, symmetric_question2.reversed),
-            forward=check_symmetric,
-            device=device,
-        )
+        if transitive_enabled and inverse_enabled:
+            logger.info("Using transitive and inverse constraints")
 
-        # inverse[inv_question1.reversed, inv_question2.reversed] = CompositionCandidateSensor(
-        #     relations=(inv_question1.reversed, inv_question2.reversed), forward=check_inverse, device=device
-        # )
+            symmetric[symmetric_question1.reversed, symmetric_question2.reversed] = CompositionCandidateSensor(
+                relations=(symmetric_question1.reversed, symmetric_question2.reversed),
+                forward=check_symmetric,
+                device=device,
+            )
 
-        transitive[tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed] = CompositionCandidateSensor(
-            relations=(tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed),
-            forward=check_transitive,
-            device=device,
-        )
+            transitive[tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed] = CompositionCandidateSensor(
+                relations=(tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed),
+                forward=check_transitive,
+                device=device,
+            )
 
-        poi_list.extend([symmetric, transitive])
+            poi_list.extend([symmetric, transitive])
+
+        elif transitive_enabled and not inverse_enabled:
+            logger.info("Using transitive constraints only")
+            transitive[tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed] = CompositionCandidateSensor(
+                relations=(tran_quest1.reversed, tran_quest2.reversed, tran_quest3.reversed),
+                forward=check_transitive,
+                device=device,
+            )
+            poi_list.extend([transitive])
+
+        elif not transitive_enabled and inverse_enabled:
+            logger.info("Using inverse constraints only")
+            symmetric[symmetric_question1.reversed, symmetric_question2.reversed] = CompositionCandidateSensor(
+                relations=(symmetric_question1.reversed, symmetric_question2.reversed),
+                forward=check_symmetric,
+                device=device,
+            )
+            poi_list.extend([symmetric])
 
     infer_list = ["ILP", "local/argmax"]
     if pmd:

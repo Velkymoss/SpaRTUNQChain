@@ -134,6 +134,8 @@ def main(args: Any) -> None:
         dropout=args.dropout,
         constraints=args.constraints,
         class_weights=class_weights if args.use_class_weights else None,
+        transitive_enabled=args.transitive_enabled,
+        inverse_enabled=args.inverse_enabled,
     )
 
     results = program.train(

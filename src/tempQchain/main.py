@@ -44,6 +44,8 @@ def temporal_fr(
     # Model parameters
     dropout: bool = typer.Option(False, help="Enable dropout"),
     constraints: bool = typer.Option(False, help="Enable constraints"),
+    transitive_enabled: bool = typer.Option(True, help="Enable transitive constraints"),
+    inverse_enabled: bool = typer.Option(True, help="Enable inverse constraints"),
     use_class_weights: bool = typer.Option(False, help="Enable class weights for training"),
     # Training method parameters
     pmd: bool = typer.Option(False, help="Use Primal Dual method"),
@@ -76,6 +78,8 @@ def temporal_fr(
         sampling=sampling,
         sampling_size=sampling_size,
         constraints=constraints,
+        transitive_enabled=transitive_enabled,
+        inverse_enabled=inverse_enabled,
         best_model_dir=best_model_dir,
         use_mlflow=use_mlflow,
         use_class_weights=use_class_weights,
@@ -250,7 +254,6 @@ def calculate_symmetry_accuracy(
         typer.echo(f"Correct conclusions: {results['correct_conclusions']}")
         typer.echo(f"Incorrect conclusions: {results['incorrect_conclusions']}")
         typer.echo(f"Accuracy: {results['accuracy']:.2%}")
-
 
         typer.echo("✅ Symmetry accuracy calculation completed successfully!")
     except Exception as e:

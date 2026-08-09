@@ -173,7 +173,7 @@ def constraint_analysis(
     data_path: str = typer.Option("data/", help="Path to the data folder"),
     # Model parameters
     dropout: bool = typer.Option(False, help="Enable dropout"),
-    constraints: bool = typer.Option(False, help="Enable constraints"),
+    constraints: bool = typer.Option(True, help="Enable constraints"),
     # Training method parameters
     pmd: bool = typer.Option(False, help="Use Primal Dual method"),
     beta: float = typer.Option(1.0, help="Beta parameter for PMD"),

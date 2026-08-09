@@ -255,10 +255,83 @@ def calculate_symmetry_accuracy(
         typer.echo(f"Incorrect conclusions: {results['incorrect_conclusions']}")
         typer.echo(f"Accuracy: {results['accuracy']:.2%}")
 
+        typer.echo("\nRule-by-Rule Statistics:")
+        for rule_key, stats in results["rule_stats"].items():
+            rule_accuracy = stats["correct"] / stats["total"] if stats["total"] > 0 else 0.0
+            typer.echo(f"  Rule {rule_key}: {stats['correct']}/{stats['total']} correct ({rule_accuracy:.2%})")
+
         typer.echo("✅ Symmetry accuracy calculation completed successfully!")
     except Exception as e:
         typer.echo(f"❌ Error during symmetry accuracy calculation: {e}", err=True)
         raise typer.Exit(1)
+
+
+@app.command()
+def calculate_total_constraint_metrics(
+    data_path: str = typer.Option(..., help="Path to the data folder containing constraint results files"),
+):
+    """Calculate symmetry and transitive accuracy for all files in a data folder."""
+    from pathlib import Path
+
+    import tempQchain.symmetry_accuracy as symmetry_accuracy
+    import tempQchain.transitive_accuracy as transitive_accuracy
+
+    data_dir = Path(data_path)
+
+    if not data_dir.exists() or not data_dir.is_dir():
+        typer.echo(f"❌ Data folder not found: {data_path}", err=True)
+        raise typer.Exit(1)
+
+    files = sorted(data_dir.iterdir())
+    if not files:
+        typer.echo(f"❌ No files found in directory: {data_path}", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"Analyzing constraint metrics for all files in: {data_path}\n")
+
+    for file_path in files:
+        if not file_path.is_file():
+            continue
+
+        typer.echo(f"{'='*60}")
+        typer.echo(f"Processing file: {file_path.name}")
+        typer.echo(f"{'='*60}")
+
+        # Calculate symmetry accuracy
+        typer.echo(f"\n[Symmetry Accuracy for {file_path.name}]")
+        try:
+            sym_results = symmetry_accuracy.calculate_symmetry_accuracy(str(file_path))
+            typer.echo(f"Total symmetry batches: {sym_results['total_symmetry_batches']}")
+            typer.echo(f"Correct conclusions: {sym_results['correct_conclusions']}")
+            typer.echo(f"Incorrect conclusions: {sym_results['incorrect_conclusions']}")
+            typer.echo(f"Accuracy: {sym_results['accuracy']:.2%}")
+
+            typer.echo("\nRule-by-Rule Statistics (Symmetry):")
+            for rule_key, stats in sym_results["rule_stats"].items():
+                rule_accuracy = stats["correct"] / stats["total"] if stats["total"] > 0 else 0.0
+                typer.echo(f"  Rule {rule_key}: {stats['correct']}/{stats['total']} correct ({rule_accuracy:.2%})")
+        except Exception as e:
+            typer.echo(f"❌ Error calculating symmetry accuracy for {file_path.name}: {e}", err=True)
+
+        # Calculate transitive accuracy
+        typer.echo(f"\n[Transitive Accuracy for {file_path.name}]")
+        try:
+            trans_results = transitive_accuracy.calculate_transitive_accuracy(str(file_path))
+            typer.echo(f"Total transitive batches: {trans_results['total_transitive_batches']}")
+            typer.echo(f"Correct conclusions: {trans_results['correct_conclusions']}")
+            typer.echo(f"Incorrect conclusions: {trans_results['incorrect_conclusions']}")
+            typer.echo(f"Accuracy: {trans_results['accuracy']:.2%}")
+
+            typer.echo("\nRule-by-Rule Statistics (Transitive):")
+            for rule_key, stats in trans_results["rule_stats"].items():
+                rule_accuracy = stats["correct"] / stats["total"] if stats["total"] > 0 else 0.0
+                typer.echo(f"  Rule {rule_key}: {stats['correct']}/{stats['total']} correct ({rule_accuracy:.2%})")
+        except Exception as e:
+            typer.echo(f"❌ Error calculating transitive accuracy for {file_path.name}: {e}", err=True)
+
+        typer.echo()
+
+    typer.echo("✅ Total constraint metrics calculation completed for all files!")
 
 
 if __name__ == "__main__":

@@ -81,6 +81,11 @@ def main(args: Any) -> None:
     program.model.mode(Mode.TEST)
     program.model.reset()
 
+    logger.info("Verifying results for the test constraints set...")
+    program.verifyResultsLC(test_constraints_set, device=cur_device)
+    logger.info("Constraint analysis completed.")
+
+
     all_chains = []
     for batch_idx, datanode in enumerate(program.populate(test_constraints_set, device=cur_device)):
         id_map = {}

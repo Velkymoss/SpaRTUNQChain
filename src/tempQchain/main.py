@@ -174,6 +174,8 @@ def constraint_analysis(
     # Model parameters
     dropout: bool = typer.Option(False, help="Enable dropout"),
     constraints: bool = typer.Option(True, help="Enable constraints"),
+    transitive_enabled: bool = typer.Option(True, help="Enable transitive constraints"),
+    inverse_enabled: bool = typer.Option(True, help="Enable inverse constraints"),
     # Training method parameters
     pmd: bool = typer.Option(False, help="Use Primal Dual method"),
     beta: float = typer.Option(1.0, help="Beta parameter for PMD"),
@@ -196,6 +198,8 @@ def constraint_analysis(
         data_path=data_path,
         dropout=dropout,
         constraints=constraints,
+        transitive_enabled=transitive_enabled,
+        inverse_enabled=inverse_enabled,
         pmd=pmd,
         beta=beta,
         sampling=sampling,

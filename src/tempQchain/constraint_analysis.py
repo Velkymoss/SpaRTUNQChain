@@ -53,6 +53,8 @@ def main(args: Any) -> None:
         sampleSize=args.sampling_size,
         dropout=args.dropout,
         constraints=args.constraints,
+        transitive_enabled=args.transitive_enabled,
+        inverse_enabled=args.inverse_enabled,
         class_weights=None,
     )
 

@@ -1,4 +1,4 @@
-import json
+import logging
 import os
 import random
 from typing import Any
@@ -7,13 +7,14 @@ import numpy as np
 import torch
 from domiknows.program.model.base import Mode
 
-from tempQchain.graphs.graph_fr import answer_class
 from tempQchain.logger import get_logger
 from tempQchain.programs.program_fr import program_declaration_tb_dense_fr
 from tempQchain.readers.temporal_reader import TemporalReader
 from tempQchain.utils import get_class_distribution
 
 logger = get_logger(__name__)
+
+logging.basicConfig(level=logging.INFO)
 
 
 def main(args: Any) -> None:
@@ -85,89 +86,88 @@ def main(args: Any) -> None:
     program.verifyResultsLC(test_constraints_set, device=cur_device)
     logger.info("Constraint analysis completed.")
 
+    # all_chains = []
+    # for batch_idx, datanode in enumerate(program.populate(test_constraints_set, device=cur_device)):
+    #     id_map = {}
+    #     for pos, q in enumerate(datanode.getChildDataNodes()):
+    #         qid_raw = q.getAttribute("id")
+    #         try:
+    #             qid_val = int(qid_raw.item())
+    #         except Exception:
+    #             try:
+    #                 qid_val = int(qid_raw)
+    #             except Exception:
+    #                 qid_val = pos
 
-    all_chains = []
-    for batch_idx, datanode in enumerate(program.populate(test_constraints_set, device=cur_device)):
-        id_map = {}
-        for pos, q in enumerate(datanode.getChildDataNodes()):
-            qid_raw = q.getAttribute("id")
-            try:
-                qid_val = int(qid_raw.item())
-            except Exception:
-                try:
-                    qid_val = int(qid_raw)
-                except Exception:
-                    qid_val = pos
+    #         try:
+    #             label_val = int(q.getAttribute(answer_class, "label"))
+    #         except Exception:
+    #             label_val = None
+    #         pred_val = None
+    #         try:
+    #             logits = q.getAttribute(answer_class, "local/argmax")
+    #             pred_val = int(torch.argmax(logits))
+    #         except Exception:
+    #             try:
+    #                 soft = q.getAttribute(answer_class, "local/softmax")
+    #                 pred_val = int(torch.argmax(soft))
+    #             except Exception:
+    #                 pred_val = None
 
-            try:
-                label_val = int(q.getAttribute(answer_class, "label"))
-            except Exception:
-                label_val = None
-            pred_val = None
-            try:
-                logits = q.getAttribute(answer_class, "local/argmax")
-                pred_val = int(torch.argmax(logits))
-            except Exception:
-                try:
-                    soft = q.getAttribute(answer_class, "local/softmax")
-                    pred_val = int(torch.argmax(soft))
-                except Exception:
-                    pred_val = None
+    #         id_map[qid_val] = {
+    #             "pos": pos,
+    #             "qid": qid_val,
+    #             "question": q.getAttribute("question"),
+    #             "story": q.getAttribute("story"),
+    #             "label": label_val,
+    #             "prediction": pred_val,
+    #         }
 
-            id_map[qid_val] = {
-                "pos": pos,
-                "qid": qid_val,
-                "question": q.getAttribute("question"),
-                "story": q.getAttribute("story"),
-                "label": label_val,
-                "prediction": pred_val,
-            }
+    #     chains_in_batch = []
+    #     for q in datanode.getChildDataNodes():
+    #         qid_raw = q.getAttribute("id")
+    #         try:
+    #             qid = int(qid_raw.item())
+    #         except Exception:
+    #             try:
+    #                 qid = int(qid_raw)
+    #             except Exception:
+    #                 continue
 
-        chains_in_batch = []
-        for q in datanode.getChildDataNodes():
-            qid_raw = q.getAttribute("id")
-            try:
-                qid = int(qid_raw.item())
-            except Exception:
-                try:
-                    qid = int(qid_raw)
-                except Exception:
-                    continue
+    #         rel_raw = q.getAttribute("relation") or ""
+    #         rel_str = rel_raw if isinstance(rel_raw, str) else str(rel_raw)
+    #         if not rel_str:
+    #             continue
+    #         parts = rel_str.split(",")
+    #         constraint = parts[0]
+    #         if constraint not in ("transitive", "symmetric"):
+    #             continue
 
-            rel_raw = q.getAttribute("relation") or ""
-            rel_str = rel_raw if isinstance(rel_raw, str) else str(rel_raw)
-            if not rel_str:
-                continue
-            parts = rel_str.split(",")
-            constraint = parts[0]
-            if constraint not in ("transitive", "symmetric"):
-                continue
+    #         related_ids = [int(p) for p in parts[1:] if p.strip()]
 
-            related_ids = [int(p) for p in parts[1:] if p.strip()]
+    #         primary = id_map.get(qid, None)
+    #         related = [
+    #             id_map.get(
+    #                 rid, {"qid": rid, "pos": None, "question": None, "story": None, "label": None, "prediction": None}
+    #             )
+    #             for rid in related_ids
+    #         ]
 
-            primary = id_map.get(qid, None)
-            related = [
-                id_map.get(
-                    rid, {"qid": rid, "pos": None, "question": None, "story": None, "label": None, "prediction": None}
-                )
-                for rid in related_ids
-            ]
+    #         chain = {
+    #             "batch_idx": batch_idx,
+    #             "constraint": constraint,
+    #             "primary": primary,
+    #             "related": related,
+    #         }
+    #         chains_in_batch.append(chain)
 
-            chain = {
-                "batch_idx": batch_idx,
-                "constraint": constraint,
-                "primary": primary,
-                "related": related,
-            }
-            chains_in_batch.append(chain)
+    #     if chains_in_batch:
+    #         all_chains.extend(chains_in_batch)
 
-        if chains_in_batch:
-            all_chains.extend(chains_in_batch)
+    # output_file = getattr(args, "output_file", os.path.join(args.data_path, "final_chain_questions.json"))
+    # output_dir = os.path.dirname(output_file)
+    # if output_dir:
+    #     os.makedirs(output_dir, exist_ok=True)
 
-    output_file = getattr(args, "output_file", os.path.join(args.data_path, "final_chain_questions.json"))
-    output_dir = os.path.dirname(output_file)
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(all_chains, f, indent=4)
+    # with open(output_file, "w", encoding="utf-8") as f:
+    #     json.dump(all_chains, f, indent=4)

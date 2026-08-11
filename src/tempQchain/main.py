@@ -47,6 +47,8 @@ def temporal_fr(
     transitive_enabled: bool = typer.Option(True, help="Enable transitive constraints"),
     inverse_enabled: bool = typer.Option(True, help="Enable inverse constraints"),
     use_class_weights: bool = typer.Option(False, help="Enable class weights for training"),
+    train_ratio: float = typer.Option(1.0, help="Fraction of training data to use (0.0 to 1.0)"),
+    ratio_seed: int = typer.Option(42, help="Seed for sampling training data"),
     # Training method parameters
     pmd: bool = typer.Option(False, help="Use Primal Dual method"),
     beta: float = typer.Option(1.0, help="Beta parameter for PMD"),
@@ -83,6 +85,8 @@ def temporal_fr(
         best_model_dir=best_model_dir,
         use_mlflow=use_mlflow,
         use_class_weights=use_class_weights,
+        train_ratio=train_ratio,
+        ratio_seed=ratio_seed,
         patience=patience,
         c_lr=c_lr,
         c_warmup_iters=c_warmup_iters,

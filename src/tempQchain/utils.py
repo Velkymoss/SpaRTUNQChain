@@ -1,3 +1,5 @@
+import math
+import random
 from collections import Counter
 
 import torch
@@ -47,3 +49,27 @@ def get_class_distribution(dataset: list[dict[str, str]]) -> dict[int, dict[str,
         }
 
     return distribution
+
+
+def sample_batches(batches: list[dict[str, str]], ratio: float, ratio_seed: int | None = 42) -> list[dict[str, str]]:
+    """Sample a random fraction (0.0 to 1.0) of batches for training.
+
+    Args:
+        batches: List of batches.
+        ratio: Fraction of batches to sample, between 0.0 and 1.0.
+        ratio_seed: Optional integer seed for reproducible random selection.
+
+    Returns:
+        A list containing the sampled subset of batches.
+    """
+    if not 0.0 <= ratio <= 1.0:
+        raise ValueError(f"Ratio must be between 0.0 and 1.0 inclusive, got {ratio}")
+
+    k = math.ceil(len(batches) * ratio)
+
+    if ratio_seed is not None:
+        # Create an isolated local generator instance
+        rng = random.Random(ratio_seed)
+        return rng.sample(batches, k=k)
+
+    return random.sample(batches, k=k)  

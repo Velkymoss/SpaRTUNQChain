@@ -13,7 +13,7 @@ from tempQchain.programs.program_fr import (
     program_declaration_tb_dense_fr,
 )
 from tempQchain.readers.temporal_reader import TemporalReader
-from tempQchain.utils import get_class_distribution, get_train_labels
+from tempQchain.utils import get_class_distribution, get_train_labels, sample_batches
 
 logger = get_logger(__name__)
 
@@ -25,8 +25,8 @@ def main(args: Any) -> None:
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
     torch.cuda.manual_seed_all(SEED)
-    os.environ['PYTHONHASHSEED'] = str(SEED)
-    
+    os.environ["PYTHONHASHSEED"] = str(SEED)
+
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
@@ -100,6 +100,11 @@ def main(args: Any) -> None:
     training_set = TemporalReader.from_file(
         file_path=os.path.join(args.data_path, train_file), question_type="FR", batch_size=args.batch_size
     )
+
+    if args.train_ratio < 1.0:
+        logger.info(f"Sampling {args.train_ratio * 100}% of training data...")
+        training_set = sample_batches(training_set, ratio=args.train_ratio, ratio_seed=args.ratio_seed)
+
     class_distribution = get_class_distribution(training_set)
     logger.info(f"Train class distribution: {class_distribution}")
 
